@@ -1,15 +1,31 @@
 // SPDX-License-Identifier: Apache-2.0
 
+trait Controller {
+    type Port: PortConfig;
+
+    fn ports_mut(&mut self) -> &mut [Self::Port];
+
+    fn sort_ports(&mut self) {
+        self.ports_mut()
+            .sort_unstable_by(|a: &Self::Port, b| a.name().cmp(b.name()));
+    }
+}
+
+trait PortConfig {
+    fn name(&self) -> &str;
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct BondIface {
     name: String,
     ports: Vec<BondPort>,
 }
 
-impl BondIface {
-    fn sort_ports(&mut self) {
-        self.ports
-            .sort_unstable_by(|a, b| a.name.as_str().cmp(b.name.as_str()));
+impl Controller for BondIface {
+    type Port = BondPort;
+
+    fn ports_mut(&mut self) -> &mut [BondPort] {
+        self.ports.as_mut_slice()
     }
 }
 
@@ -19,10 +35,24 @@ struct BondPort {
     priority: u32,
 }
 
+impl PortConfig for BondPort {
+    fn name(&self) -> &str {
+        self.name.as_str()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct BridgeIface {
     name: String,
     ports: Vec<BridgePort>,
+}
+
+impl Controller for BridgeIface {
+    type Port = BridgePort;
+
+    fn ports_mut(&mut self) -> &mut [BridgePort] {
+        self.ports.as_mut_slice()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -31,10 +61,9 @@ struct BridgePort {
     stp: bool,
 }
 
-impl BridgeIface {
-    fn sort_ports(&mut self) {
-        self.ports
-            .sort_unstable_by(|a, b| a.name.as_str().cmp(b.name.as_str()));
+impl PortConfig for BridgePort {
+    fn name(&self) -> &str {
+        self.name.as_str()
     }
 }
 
